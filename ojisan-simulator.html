@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>おじさんLINE返信シミュレーター</title>
+    <style>
+        body {
+            font-family: 'Hiragino Sans', 'Yu Gothic', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: #00c851;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .chat-area {
+            padding: 20px;
+            background: #f0f0f0;
+            min-height: 300px;
+        }
+        
+        .message {
+            margin: 10px 0;
+            padding: 12px 16px;
+            border-radius: 18px;
+            max-width: 80%;
+            word-wrap: break-word;
+        }
+        
+        .received {
+            background: white;
+            margin-right: auto;
+            border-bottom-left-radius: 4px;
+        }
+        
+        .sent {
+            background: #00c851;
+            color: white;
+            margin-left: auto;
+            border-bottom-right-radius: 4px;
+        }
+        
+        .input-area {
+            padding: 20px;
+            background: white;
+        }
+        
+        .scenario-info {
+            background: #e3f2fd;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #2196f3;
+        }
+        
+        textarea {
+            width: 100%;
+            height: 80px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            padding: 10px;
+            font-size: 16px;
+            resize: vertical;
+            box-sizing: border-box;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        button {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .send-btn {
+            background: #00c851;
+            color: white;
+        }
+        
+        .send-btn:hover {
+            background: #00a844;
+        }
+        
+        .next-btn {
+            background: #ff9800;
+            color: white;
+        }
+        
+        .next-btn:hover {
+            background: #f57c00;
+        }
+        
+        .score {
+            text-align: center;
+            padding: 15px;
+            background: #fff3e0;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        
+        .feedback {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 8px;
+            display: none;
+        }
+        
+        .feedback.good {
+            background: #e8f5e8;
+            border-left: 4px solid #4caf50;
+        }
+        
+        .feedback.bad {
+            background: #ffebee;
+            border-left: 4px solid #f44336;
+        }
+        
+        .ojisan-tips {
+            background: #fff9c4;
+            padding: 10px;
+            margin-top: 10px;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🧔 おじさんLINE返信シミュレーター 📱</h1>
+            <p>あなたもおじさんになりきって返信してみよう！</p>
+        </div>
+        
+        <div class="score">
+            おじさん度スコア: <span id="score">0</span>点 | シナリオ: <span id="scenario-count">1</span>/5
+        </div>
+        
+        <div class="chat-area">
+            <div class="scenario-info" id="scenario-info">
+                <strong>シナリオ1:</strong> 職場の後輩からのメッセージです
+            </div>
+            
+            <div id="chat-messages">
+                <div class="message received" id="received-message">
+                    お疲れ様です！今日の会議資料、明日までに準備しておきますね。
+                </div>
+            </div>
+        </div>
+        
+        <div class="input-area">
+            <textarea id="user-input" placeholder="おじさんらしい返信を入力してください..."></textarea>
+            <div class="button-group">
+                <button class="send-btn" onclick="sendMessage()">返信する</button>
+                <button class="next-btn" onclick="nextScenario()">次のシナリオ</button>
+            </div>
+            
+            <div class="feedback" id="feedback"></div>
+            
+            <div class="ojisan-tips">
+                <strong>おじさん構文のコツ:</strong>
+                絵文字多用😊、不自然な敬語、カタカナ多用、「〜ですネ」「〜ですヨ」、長文、余計な気遣い
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentScore = 0;
+        let currentScenario = 1;
+        
+        const scenarios = [
+            {
+                info: "職場の後輩からのメッセージです",
+                message: "お疲れ様です！今日の会議資料、明日までに準備しておきますね。"
+            },
+            {
+                info: "娘からの近況報告です",
+                message: "お父さん、今度の日曜日に友達と映画見に行くから！"
+            },
+            {
+                info: "同僚からの飲み会の誘いです",
+                message: "今度の金曜日、みんなで飲みに行きませんか？"
+            },
+            {
+                info: "部下からの体調不良の連絡です",
+                message: "すみません、風邪をひいてしまい、今日はお休みをいただきたいです。"
+            },
+            {
+                info: "奥さんからの買い物リストです",
+                message: "牛乳と卵とパン買ってきて。あと醤油も切れてる。"
+            }
+        ];
+        
+        function analyzeOjisanLevel(text) {
+            let score = 0;
+            let feedback = [];
+            
+            // 絵文字チェック
+            const emojiRegex = /[\u{1F600}-\u{1F64F}]|[\u{1F300}-\u{1F5FF}]|[\u{1F680}-\u{1F6FF}]|[\u{1F1E0}-\u{1F1FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/gu;
+            const emojiCount = (text.match(emojiRegex) || []).length;
+            if (emojiCount >= 2) {
+                score += 20;
+                feedback.push("絵文字の使用が適切です！😊");
+            }
+            
+            // カタカナ多用チェック
+            if (text.includes('ネ') || text.includes('ヨ') || text.includes('デス')) {
+                score += 15;
+                feedback.push("カタカナの不自然な使用が良いですネ！");
+            }
+            
+            // 長文チェック
+            if (text.length > 50) {
+                score += 10;
+                feedback.push("おじさんらしい長文です！");
+            }
+            
+            // 過度な敬語・気遣いチェック
+            if (text.includes('お疲れ様') || text.includes('ありがとうございます') || text.includes('よろしく')) {
+                score += 15;
+                feedback.push("丁寧な気遣いがおじさんらしいです！");
+            }
+            
+            // 特徴的な表現チェック
+            if (text.includes('〜ですネ') || text.includes('〜ですヨ') || text.includes('〜ですナ')) {
+                score += 20;
+                feedback.push("おじさん特有の語尾が完璧です！");
+            }
+            
+            // 余計な心配・アドバイス
+            if (text.includes('体調') || text.includes('気をつけて') || text.includes('無理しないで')) {
+                score += 10;
+                feedback.push("余計な心配がおじさんらしいです！");
+            }
+            
+            return { score: Math.min(score, 100), feedback };
+        }
+        
+        function sendMessage() {
+            const input = document.getElementById('user-input');
+            const message = input.value.trim();
+            
+            if (!message) {
+                alert('メッセージを入力してください！');
+                return;
+            }
+            
+            // ユーザーのメッセージを表示
+            const chatMessages = document.getElementById('chat-messages');
+            const userMessage = document.createElement('div');
+            userMessage.className = 'message sent';
+            userMessage.textContent = message;
+            chatMessages.appendChild(userMessage);
+            
+            // スコア計算
+            const analysis = analyzeOjisanLevel(message);
+            currentScore += analysis.score;
+            
+            // フィードバック表示
+            const feedbackDiv = document.getElementById('feedback');
+            feedbackDiv.style.display = 'block';
+            feedbackDiv.className = `feedback ${analysis.score >= 50 ? 'good' : 'bad'}`;
+            feedbackDiv.innerHTML = `
+                <strong>今回のおじさん度: ${analysis.score}点</strong><br>
+                ${analysis.feedback.join('<br>')}
+            `;
+            
+            // スコア更新
+            document.getElementById('score').textContent = currentScore;
+            
+            // 入力欄クリア
+            input.value = '';
+            
+            // スクロール
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+        
+        function nextScenario() {
+            if (currentScenario >= scenarios.length) {
+                showFinalResult();
+                return;
+            }
+            
+            currentScenario++;
+            const scenario = scenarios[currentScenario - 1];
+            
+            // シナリオ情報更新
+            document.getElementById('scenario-info').innerHTML = 
+                `<strong>シナリオ${currentScenario}:</strong> ${scenario.info}`;
+            document.getElementById('scenario-count').textContent = currentScenario;
+            
+            // チャットエリアリセット
+            const chatMessages = document.getElementById('chat-messages');
+            chatMessages.innerHTML = `
+                <div class="message received">
+                    ${scenario.message}
+                </div>
+            `;
+            
+            // フィードバック非表示
+            document.getElementById('feedback').style.display = 'none';
+        }
+        
+        function showFinalResult() {
+            const averageScore = Math.round(currentScore / scenarios.length);
+            let rank = '';
+            
+            if (averageScore >= 80) {
+                rank = '🏆 おじさんマスター';
+            } else if (averageScore >= 60) {
+                rank = '🥈 おじさん上級者';
+            } else if (averageScore >= 40) {
+                rank = '🥉 おじさん中級者';
+            } else {
+                rank = '📱 おじさん初心者';
+            }
+            
+            alert(`ゲーム終了！\n\n総合スコア: ${currentScore}点\n平均スコア: ${averageScore}点\nランク: ${rank}\n\nお疲れ様でした😊`);
+            
+            // リセット
+            currentScore = 0;
+            currentScenario = 1;
+            document.getElementById('score').textContent = '0';
+            document.getElementById('scenario-count').textContent = '1';
+            
+            // 最初のシナリオに戻る
+            const firstScenario = scenarios[0];
+            document.getElementById('scenario-info').innerHTML = 
+                `<strong>シナリオ1:</strong> ${firstScenario.info}`;
+            
+            const chatMessages = document.getElementById('chat-messages');
+            chatMessages.innerHTML = `
+                <div class="message received">
+                    ${firstScenario.message}
+                </div>
+            `;
+            
+            document.getElementById('feedback').style.display = 'none';
+        }
+        
+        // Enterキーで送信
+        document.getElementById('user-input').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+    </script>
+</body>
+</html>
