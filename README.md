@@ -25,7 +25,7 @@
 - 余計な心配やアドバイスを含める
 
 ## デモ
-[GitHub Pages でプレイ](https://あなたのユーザー名.github.io/ojisan-simulator/)
+[GitHub Pages でプレイ](https://silcom2020.github.io/ojisan-simulator/ojisan-simulator.html)
 
 ## 技術仕様
 - HTML5
